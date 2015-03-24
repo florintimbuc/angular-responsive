@@ -7,24 +7,78 @@
         {
             // Gather winWidth based in Twitter BootStrap http://getbootstrap.com/css/#grid-media-queries
 
+            var matchmedia = {
+                rules: {
+                    print : "print",
+                    screen : "screen",
+                    phone : "(max-width: 767px)",
+                    tablet : "(min-width: 768px) and (max-width: 979px)",
+                    desktop : "(min-width: 979px)",
+                    portrait : "(orientation: portrait)",
+                    landscape : "(orientation: landscape)"
+                }
+            };
+            function createSafeListener(cb, $scope){
+                return function(mediaQueryList){
+                    safeApply(function() {
+                        cb(mediaQueryList);
+                    },$scope);
+                };
+            }
+
+
+
             var $window  = $windowProvider.$get();
             // is better get first the innerWitdh that will not include a lateral panel
             // like the console inspector, bookmarks, etc
             var winWidth = $window.innerWidth || $window.outerWidth;
             var helper   = {
 
-                //isSmartDevice : isSmartDevice( $window ),
                 isXs: function () { return winWidth < 768; },
                 isSm: function () { return winWidth >= 768 && winWidth < 992; },
                 isMd: function () { return winWidth >= 992 && winWidth < 1200; },
                 isLg: function () { return winWidth >= 1200;},
-                isMobile: function() { return this.isXs() && isSmartDevice($window)},
-                isTablet: function() { return this.isSm() && isSmartDevice($window)},
+                isMobile: function() { return helper.isXs() && isSmartDevice($window)},
+                isTablet: function() { return (helper.isSm()||helper.isMd()) && isSmartDevice($window)},
                 isDesktop: function() { return !isSmartDevice($window) },
-                isSmartDevice: function() { return isSmartDevice($window) }
+                isSmartDevice: function() { return isSmartDevice($window) },
+                isTouch: function() {
+                    return ("ontouchstart" in window || window.DocumentTouch && document instanceof DocumentTouch);
+                },
+                isNotTouch: function() {
+                    return !this.isTouch();
+                },
+                isLandscape: function() { return ( $window.orientation == 90 || $window.orientation == -90 ); },
+                isPortrait: function() { return ( $window.orientation == 0 || $window.orientation == 180 ); },
+                on:function(query, listener, $scope) {
+                    var supportsMatchMedia = $window.matchMedia !== undefined && !!$window.matchMedia('all').addListener;
+                    if(supportsMatchMedia) {
+                        logger.log('adding listener for query: '+ query);
+                        var mediaQueryList = $window.matchMedia(query);
+                        var handler = createSafeListener(listener, $scope);
+                        mediaQueryList.addListener(handler);
+                        //immediately return the current mediaQueryList;
+                        handler(mediaQueryList);
 
+                        return function() {
+                            logger.log('removing listener from query: '+ query);
+                            mediaQueryList.removeListener(handler);
+
+                        };
+                    }
+                },
+                onPortrait : function(listener, $scope){
+                    return helper.on(matchmedia.rules.portrait, listener, $scope);
+                },
+                onLandscape: function(listener, $scope){
+                    return helper.on(matchmedia.rules.landscape, listener, $scope);
+                }
 
             };
+
+
+
+
 
             // Publish accessor function...
 
@@ -33,9 +87,58 @@
             };
         }])
 
-        /**
-         * Extra small devices Phones (<768px)
-         */
+        .directive('ajMatchmedia', ['matchmedia', function(matchmedia) {
+            return {
+                restrict: 'E',
+                scope: {
+                    'queryListener': '&',
+                    'queryMatches': '='
+                },
+                link: function(scope, element, attrs, controllers) {
+                    var deregister;
+
+                    if (attrs.on && attrs.queryListener) {
+                        if (attrs.on.slice(0, 2) === 'on' && matchmedia[attrs.on] !== 'undefined') {
+                            deregister = matchmedia[attrs.on](function(mediaQueryList) {
+                                scope.queryListener({mediaQueryList: mediaQueryList});
+                            });
+                        } else {
+                            deregister = matchmedia.on(attrs.on, function(mediaQueryList) {
+                                scope.queryListener({mediaQueryList: mediaQueryList});
+                            });
+                        }
+                        scope.$on('$destroy', deregister);
+                    } else if (attrs.is && attrs.queryMatches) {
+                        if (attrs.is.slice(0, 2) === 'is' && matchmedia[attrs.is] !== 'undefined') {
+                            scope.queryMatches = matchmedia[attrs.is]();
+                        } else {
+                            scope.queryMatches = matchmedia.is(attrs.is);
+                        }
+                    }
+                }
+            };
+        }])
+        .factory('safeApply', ['$rootScope',function($rootScope) {
+            return function(fn, $scope) {
+                $scope = $scope || $rootScope;
+                var phase = $scope.$root.$$phase;
+                if(phase == '$apply' || phase == '$digest') {
+                    if (fn) {
+                        $scope.$eval(fn);
+                    }
+                } else {
+                    if (fn) {
+                        $scope.$apply(fn);
+                    } else {
+                        $scope.$apply();
+                    }
+                }
+            };
+        }])
+
+    /**
+     * Extra small devices Phones (<768px)
+     */
         .directive('arMobile', ['responsiveHelper', function (responsiveHelper)
         {
             return {
@@ -46,9 +149,9 @@
             };
         }])
 
-        /**
-         * Small devices Tablets (≥768px)
-         */
+    /**
+     * Small devices Tablets (≥768px)
+     */
         .directive('arTablet', ['responsiveHelper', function (responsiveHelper)
         {
             return {
@@ -59,9 +162,9 @@
             };
         }])
 
-        /**
-         * Medium devices Desktops (≥992px)
-         */
+    /**
+     * Medium devices Desktops (≥992px)
+     */
         .directive('arDesktop', ['responsiveHelper', function (responsiveHelper)
         {
             return {
@@ -74,9 +177,9 @@
 
 
 
-        /**
-         * Does the with a match user-specified combination (0..4)
-         */
+    /**
+     * Does the with a match user-specified combination (0..4)
+     */
         .directive('arResponsive', ['responsiveHelper', function (responsiveHelper)
         {
             return {

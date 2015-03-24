@@ -20,6 +20,8 @@
     "package.json"
   ],
   "dependencies": {
-    "angular-route": "~1.2.13"
+    "angular-route": "~1.2.13" ,
+    "matchmedia": "~0.2.0"
+
   }
 }
