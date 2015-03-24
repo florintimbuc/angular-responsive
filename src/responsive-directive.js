@@ -18,9 +18,10 @@
                 isSm: function () { return winWidth >= 768 && winWidth < 992; },
                 isMd: function () { return winWidth >= 992 && winWidth < 1200; },
                 isLg: function () { return winWidth >= 1200;},
-                isMobile: function() { this.isXs() && isSmartDevice($window)},
-                isTablet: function() { this.isSm() && isSmartDevice($window)},
-                isDesktop: function() { !isSmartDevice($window) }
+                isMobile: function() { return this.isXs() && isSmartDevice($window)},
+                isTablet: function() { return this.isSm() && isSmartDevice($window)},
+                isDesktop: function() { return !isSmartDevice($window) },
+                isSmartDevice: function() { return isSmartDevice($window) }
 
 
             };
@@ -35,54 +36,43 @@
         /**
          * Extra small devices Phones (<768px)
          */
-        .directive('arXs', ['responsiveHelper', function (responsiveHelper)
+        .directive('arMobile', ['responsiveHelper', function (responsiveHelper)
         {
             return {
                 restrict    : "EAC",
                 transclude  : 'element',
                 template    : '<div></div>',
-                compile     : buildCompileFn( 'arXs', responsiveHelper.isXs )
+                compile     : buildCompileFn( 'arMobile', responsiveHelper.isMobile )
             };
         }])
 
         /**
          * Small devices Tablets (≥768px)
          */
-        .directive('arSm', ['responsiveHelper', function (responsiveHelper)
+        .directive('arTablet', ['responsiveHelper', function (responsiveHelper)
         {
             return {
                 restrict    : "EAC",
                 transclude  : 'element',
                 template    : '<div></div>',
-                compile     : buildCompileFn( 'arSm', responsiveHelper.isSm )
+                compile     : buildCompileFn( 'arTablet', responsiveHelper.isTablet )
             };
         }])
 
         /**
          * Medium devices Desktops (≥992px)
          */
-        .directive('arMd', ['responsiveHelper', function (responsiveHelper)
+        .directive('arDesktop', ['responsiveHelper', function (responsiveHelper)
         {
             return {
                 restrict    : "EAC",
                 transclude  : 'element',
                 template    : '<div></div>',
-                compile     : buildCompileFn( 'arMd', responsiveHelper.isMd )
+                compile     : buildCompileFn( 'arDesktop', responsiveHelper.isDesktop )
             };
         }])
 
-        /**
-         * Large devices Desktops (≥1200px)
-         */
-        .directive('arLg', ['responsiveHelper', function (responsiveHelper)
-        {
-            return {
-                restrict    : "EAC",
-                transclude  : 'element',
-                template    : '<div></div>',
-                compile     : buildCompileFn( 'arLg', responsiveHelper.isLg )
-            };
-        }])
+
 
         /**
          * Does the with a match user-specified combination (0..4)
@@ -147,7 +137,11 @@
             return  ( deviceTypes['xs']  && responsiveHelper.isXs()  ) ||
                 ( deviceTypes['sm']  && responsiveHelper.isSm()  ) ||
                 ( deviceTypes['md']  && responsiveHelper.isMd()  ) ||
-                ( deviceTypes['lg'] && responsiveHelper.isLg() ) || false;
+                ( deviceTypes['lg'] && responsiveHelper.isLg() ) ||
+                ( deviceTypes['mobile'] && responsiveHelper.isMobile() ) ||
+                ( deviceTypes['tablet'] && responsiveHelper.isTablet() ) ||
+                ( deviceTypes['desktop'] && responsiveHelper.isDesktop() ) ||
+                false;
         };
     }
 
