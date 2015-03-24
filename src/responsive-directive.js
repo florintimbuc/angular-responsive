@@ -17,7 +17,11 @@
                 isXs: function () { return winWidth < 768; },
                 isSm: function () { return winWidth >= 768 && winWidth < 992; },
                 isMd: function () { return winWidth >= 992 && winWidth < 1200; },
-                isLg: function () { return winWidth >= 1200; }
+                isLg: function () { return winWidth >= 1200;},
+                isMobile: function() { this.isXs() && isSmartDevice($window)},
+                isTablet: function() { this.isSm() && isSmartDevice($window)},
+                isDesktop: function() { !isSmartDevice($window) }
+
 
             };
 
@@ -152,7 +156,7 @@
      * @param $window
      * @returns {boolean}
      */
-    /*
+
     function isSmartDevice( $window )
     {
         // Adapted from http://www.detectmobilebrowsers.com
@@ -161,6 +165,6 @@
         // Checks for iOs, Android, Blackberry, Opera Mini, and Windows mobile devices
         return (/iPhone|iPod|iPad|Silk|Android|BlackBerry|Opera Mini|IEMobile/).test(ua);
     }
-    */
+
 
 })( window.angular );
